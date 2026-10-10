@@ -1,7 +1,15 @@
 package com.example.myapprickandmorty.data.model
 
 data class CharacterResponse(
+    val info: PageInfo,
     val results: List<RickCharacter>
+)
+
+data class PageInfo(
+    val count: Int,
+    val pages: Int,
+    val next: String?,
+    val prev: String?
 )
 
 data class RickCharacter(

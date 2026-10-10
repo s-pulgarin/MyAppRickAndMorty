@@ -6,6 +6,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,13 +43,50 @@ import com.example.myapprickandmorty.data.model.RickCharacter
 @Composable
 fun HomeScreen(
     characterList: List<RickCharacter>,
+    query: String,
+    isLoading: Boolean,
+    isLoadingMore: Boolean,
+    errorMessage: String?,
+    onQueryChange: (String) -> Unit,
+    onLoadMore: () -> Unit,
     onCharacterClick: (Int) -> Unit,
     onProfileClick: () -> Unit = {}
 ) {
     val backgroundColor = Color(0xFF0F141E)
+    val rickGreen = Color(0xFF97CE4C)
+    val textBlue = Color(0xFF00B5CC)
+
+    val listState = rememberLazyListState()
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val scope = rememberCoroutineScope()
+
+    // true cuando quedan pocos elementos por ver al final de la lista
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val total = listState.layoutInfo.totalItemsCount
+            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            total > 0 && last >= total - 4
+        }
+    }
+    LaunchedEffect(shouldLoadMore, characterList.size) {
+        if (shouldLoadMore) onLoadMore()
+    }
+    // Al empezar una búsqueda nueva, volver al inicio de la lista
+    LaunchedEffect(isLoading) {
+        if (isLoading) listState.scrollToItem(0)
+    }
 
     Scaffold(
-        bottomBar = { CustomBottomNavigation(onProfileClick = onProfileClick) },
+        bottomBar = {
+            CustomBottomNavigation(
+                onSearchClick = {
+                    scope.launch { listState.animateScrollToItem(0) }
+                    focusRequester.requestFocus()
+                },
+                onProfileClick = onProfileClick
+            )
+        },
         containerColor = backgroundColor
     ) { paddingValues ->
         Column(
@@ -49,22 +100,75 @@ fun HomeScreen(
                 text = "Dimensionados",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF97CE4C)
+                color = rickGreen
             )
             Text(
                 text = "Sujetos del Multiverso Registrados",
                 fontSize = 14.sp,
-                color = Color(0xFF00B5CC)
+                color = textBlue
             )
             Spacer(modifier = Modifier.height(16.dp))
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(characterList) { character ->
-                    CharacterListCard(
-                        character = character,
-                        onClick = { onCharacterClick(character.id) }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                placeholder = { Text("Buscar personaje...", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = textBlue) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Borrar búsqueda", tint = Color.Gray)
+                        }
+                    }
+                },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+                shape = RoundedCornerShape(30.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = rickGreen,
+                    unfocusedBorderColor = textBlue,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = rickGreen
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            when {
+                isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = rickGreen)
+                }
+                characterList.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = errorMessage ?: "No se encontraron personajes",
+                        color = Color.LightGray,
+                        fontSize = 16.sp
                     )
+                }
+                else -> LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(characterList, key = { it.id }) { character ->
+                        CharacterListCard(
+                            character = character,
+                            onClick = { onCharacterClick(character.id) }
+                        )
+                    }
+                    if (isLoadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(color = rickGreen, modifier = Modifier.size(28.dp))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -138,7 +242,7 @@ fun CharacterListCard(character: RickCharacter, onClick: () -> Unit) {
 }
 
 @Composable
-fun CustomBottomNavigation(onProfileClick: () -> Unit = {}) {
+fun CustomBottomNavigation(onSearchClick: () -> Unit = {}, onProfileClick: () -> Unit = {}) {
     NavigationBar(
         containerColor = Color(0xFF0F141E),
         contentColor = Color.White
@@ -156,7 +260,7 @@ fun CustomBottomNavigation(onProfileClick: () -> Unit = {}) {
         )
         NavigationBarItem(
             selected = false,
-            onClick = { },
+            onClick = onSearchClick,
             icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
             label = { Text("Buscar") },
             colors = NavigationBarItemDefaults.colors(
