@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -28,12 +29,13 @@ import com.example.myapprickandmorty.data.model.RickCharacter
 @Composable
 fun HomeScreen(
     characterList: List<RickCharacter>,
-    onCharacterClick: (Int) -> Unit
+    onCharacterClick: (Int) -> Unit,
+    onProfileClick: () -> Unit = {}
 ) {
     val backgroundColor = Color(0xFF0F141E)
 
     Scaffold(
-        bottomBar = { CustomBottomNavigation() },
+        bottomBar = { CustomBottomNavigation(onProfileClick = onProfileClick) },
         containerColor = backgroundColor
     ) { paddingValues ->
         Column(
@@ -136,7 +138,7 @@ fun CharacterListCard(character: RickCharacter, onClick: () -> Unit) {
 }
 
 @Composable
-fun CustomBottomNavigation() {
+fun CustomBottomNavigation(onProfileClick: () -> Unit = {}) {
     NavigationBar(
         containerColor = Color(0xFF0F141E),
         contentColor = Color.White
@@ -160,6 +162,17 @@ fun CustomBottomNavigation() {
             colors = NavigationBarItemDefaults.colors(
                 unselectedIconColor = Color.Gray,
                 unselectedTextColor = Color.Gray
+            )
+        )
+        NavigationBarItem(
+            selected = false,
+            onClick = onProfileClick,
+            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
+            label = { Text("Perfil") },
+            colors = NavigationBarItemDefaults.colors(
+                unselectedIconColor = Color.Gray,
+                unselectedTextColor = Color.Gray,
+                indicatorColor = Color.Transparent
             )
         )
     }

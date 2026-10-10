@@ -23,6 +23,10 @@ import com.example.myapprickandmorty.data.remote.RetrofitClient
 import com.example.myapprickandmorty.ui.screens.CharacterDetailScreen
 import com.example.myapprickandmorty.ui.screens.HomeScreen
 import com.example.myapprickandmorty.ui.screens.SplashScreen
+import com.example.myapprickandmorty.ui.auth.LoginScreen
+import com.example.myapprickandmorty.ui.auth.RegisterScreen
+import com.example.myapprickandmorty.ui.profile.ProfileScreen
+import com.google.firebase.auth.FirebaseAuth
 import com.example.myapprickandmorty.ui.theme.MyAppRickAndMortyTheme
 
 class MainActivity : ComponentActivity() {
@@ -66,9 +70,38 @@ fun AppNavigation() {
         composable("splash") {
             SplashScreen(
                 onNavigateToHome = {
-                    navController.navigate("home") {
+                    // Si ya hay sesión activa va directo al home; si no, al login
+                    val destination = if (FirebaseAuth.getInstance().currentUser != null) "home" else "login"
+                    navController.navigate(destination) {
                         popUpTo("splash") { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable("login") {
+            LoginScreen(
+                onLoggedIn = {
+                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                },
+                onGoToRegister = { navController.navigate("register") }
+            )
+        }
+
+        composable("register") {
+            RegisterScreen(
+                onRegistered = {
+                    navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                },
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("profile") {
+            ProfileScreen(
+                onBack = { navController.popBackStack() },
+                onLoggedOut = {
+                    navController.navigate("login") { popUpTo(0) { inclusive = true } }
                 }
             )
         }
@@ -87,7 +120,8 @@ fun AppNavigation() {
                     characterList = characterList,
                     onCharacterClick = { id ->
                         navController.navigate("detail/$id")
-                    }
+                    },
+                    onProfileClick = { navController.navigate("profile") }
                 )
             }
         }
