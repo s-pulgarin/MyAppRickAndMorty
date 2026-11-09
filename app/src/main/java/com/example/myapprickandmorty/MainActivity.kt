@@ -117,7 +117,8 @@ fun AppNavigation() {
                 onCharacterClick = { id -> navController.navigate("detail/$id") },
                 onEpisodesClick = { navController.goToTab("episodes") },
                 onFavoritesClick = { navController.goToTab("favorites") },
-                onProfileClick = { navController.goToTab("profile") }
+                onProfileClick = { navController.goToTab("profile") },
+                onRandomClick = { navController.navigate("detail/${homeViewModel.randomCharacterId()}") }
             )
         }
 

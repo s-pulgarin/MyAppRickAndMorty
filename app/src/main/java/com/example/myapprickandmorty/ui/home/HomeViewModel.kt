@@ -22,6 +22,11 @@ class HomeViewModel : ViewModel() {
     var filters by mutableStateOf(CharacterFilters()); private set
     /** Total de resultados que reporta la API para la búsqueda/filtros actuales. */
     var totalCount by mutableStateOf<Int?>(null); private set
+
+    /** Total de personajes de la API (sin búsqueda ni filtros). Se actualiza con la primera carga. */
+    private var totalCharacters = 826
+
+    fun randomCharacterId(): Int = (1..totalCharacters).random()
     var isLoading by mutableStateOf(true); private set
     var isLoadingMore by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null); private set
@@ -64,6 +69,7 @@ class HomeViewModel : ViewModel() {
                 val response = fetch(1, q)
                 characters = response.results
                 totalCount = response.info.count
+                if (q.isEmpty() && filters.isEmpty) totalCharacters = response.info.count
                 canLoadMore = response.info.next != null
             } catch (e: CancellationException) {
                 throw e

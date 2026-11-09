@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import com.example.myapprickandmorty.data.model.CharacterFilters
 import com.example.myapprickandmorty.data.model.RickCharacter
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Casino
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -58,7 +59,8 @@ fun HomeScreen(
     onCharacterClick: (Int) -> Unit,
     onEpisodesClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
-    onProfileClick: () -> Unit = {}
+    onProfileClick: () -> Unit = {},
+    onRandomClick: () -> Unit = {}
 ) {
     val backgroundColor = Color(0xFF0F141E)
     val rickGreen = Color(0xFF97CE4C)
@@ -114,17 +116,31 @@ fun HomeScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Dimensionados",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = rickGreen
-            )
-            Text(
-                text = "Sujetos del Multiverso Registrados",
-                fontSize = 14.sp,
-                color = textBlue
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Dimensionados",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = rickGreen
+                    )
+                    Text(
+                        text = "Sujetos del Multiverso Registrados",
+                        fontSize = 14.sp,
+                        color = textBlue
+                    )
+                }
+                // Abre la ficha de un personaje al azar
+                OutlinedButton(
+                    onClick = onRandomClick,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, rickGreen),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Icon(Icons.Default.Casino, contentDescription = null, tint = rickGreen, modifier = Modifier.size(20.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Al azar", color = rickGreen, fontWeight = FontWeight.Bold)
+                }
+            }
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
