@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myapprickandmorty.data.model.Episode
 import com.example.myapprickandmorty.data.model.RickCharacter
+import com.example.myapprickandmorty.data.model.locationId
 import com.example.myapprickandmorty.ui.episodes.formatAirDate
 
 private val BackgroundColor = Color(0xFF0F141E)
@@ -48,6 +49,7 @@ fun CharacterDetailScreen(
     onRetry: () -> Unit,
     onBackClick: () -> Unit,
     onEpisodeClick: (Int) -> Unit = {},
+    onLocationClick: (Int) -> Unit = {},
     onCharactersClick: () -> Unit = {},
     onEpisodesClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
@@ -114,7 +116,7 @@ fun CharacterDetailScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             when {
-                character != null -> CharacterDetailContent(character, firstEpisode, lastEpisode, isLoading, onEpisodeClick)
+                character != null -> CharacterDetailContent(character, firstEpisode, lastEpisode, isLoading, onEpisodeClick, onLocationClick)
                 isLoading -> Box(
                     modifier = Modifier.fillMaxWidth().padding(top = 80.dp),
                     contentAlignment = Alignment.Center
@@ -141,7 +143,8 @@ private fun CharacterDetailContent(
     firstEpisode: Episode?,
     lastEpisode: Episode?,
     isLoading: Boolean,
-    onEpisodeClick: (Int) -> Unit
+    onEpisodeClick: (Int) -> Unit,
+    onLocationClick: (Int) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -183,9 +186,17 @@ private fun CharacterDetailContent(
         RowDivider()
         DetailRow(label = "Género", value = translateGender(character.gender))
         RowDivider()
-        DetailRow(label = "Origen", value = placeName(character.origin.name))
+        DetailRow(
+            label = "Origen",
+            value = placeName(character.origin.name),
+            onClick = character.origin.locationId?.let { id -> { onLocationClick(id) } }
+        )
         RowDivider()
-        DetailRow(label = "Última ubicación", value = placeName(character.location?.name))
+        DetailRow(
+            label = "Última ubicación",
+            value = placeName(character.location?.name),
+            onClick = character.location?.locationId?.let { id -> { onLocationClick(id) } }
+        )
     }
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -279,10 +290,12 @@ private fun placeName(name: String?) =
     if (name.isNullOrBlank() || name.equals("unknown", ignoreCase = true)) "Desconocido" else name
 
 @Composable
-fun DetailRow(label: String, value: String) {
+/** Fila etiqueta/valor. Con [onClick] se vuelve un enlace (valor en azul y flecha). */
+fun DetailRow(label: String, value: String, onClick: (() -> Unit)? = null) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -290,12 +303,15 @@ fun DetailRow(label: String, value: String) {
         Text(text = label, color = Color.Gray, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Text(
             text = value,
-            color = Color.White,
+            color = if (onClick != null) TextBlue else Color.White,
             fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f).padding(start = 16.dp)
         )
+        if (onClick != null) {
+            Icon(Icons.Default.ChevronRight, contentDescription = "Ver $label", tint = TextBlue)
+        }
     }
 }
 

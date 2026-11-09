@@ -31,6 +31,8 @@ import com.example.myapprickandmorty.ui.screens.EpisodesScreen
 import com.example.myapprickandmorty.ui.screens.EpisodeDetailScreen
 import com.example.myapprickandmorty.ui.episodes.EpisodesViewModel
 import com.example.myapprickandmorty.ui.episodes.EpisodeDetailViewModel
+import com.example.myapprickandmorty.ui.locations.LocationDetailViewModel
+import com.example.myapprickandmorty.ui.screens.LocationDetailScreen
 import androidx.navigation.NavController
 
 class MainActivity : ComponentActivity() {
@@ -181,6 +183,32 @@ fun AppNavigation() {
         }
 
         composable(
+            route = "location/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val locationId = backStackEntry.arguments?.getInt("id") ?: 1
+            // Este ViewModel vive solo mientras esta pantalla esté en la pila
+            val locationViewModel: LocationDetailViewModel = viewModel()
+
+            LaunchedEffect(locationId) { locationViewModel.load(locationId) }
+
+            LocationDetailScreen(
+                location = locationViewModel.location,
+                residents = locationViewModel.residents,
+                isLoading = locationViewModel.isLoading,
+                isLoadingResidents = locationViewModel.isLoadingResidents,
+                errorMessage = locationViewModel.error,
+                onRetry = { locationViewModel.load(locationId) },
+                onCharacterClick = { id -> navController.navigate("detail/$id") },
+                onBackClick = { navController.popBackStack() },
+                onCharactersClick = { navController.goToTab("home") },
+                onEpisodesClick = { navController.goToTab("episodes") },
+                onFavoritesClick = { navController.goToTab("favorites") },
+                onProfileClick = { navController.goToTab("profile") }
+            )
+        }
+
+        composable(
             route = "detail/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
@@ -204,6 +232,7 @@ fun AppNavigation() {
                 onToggleFavorite = { character?.let(favoritesViewModel::toggle) },
                 onRetry = { detailViewModel.retry(characterId) },
                 onEpisodeClick = { id -> navController.navigate("episode/$id") },
+                onLocationClick = { id -> navController.navigate("location/$id") },
                 onBackClick = { navController.popBackStack() },
                 onCharactersClick = { navController.goToTab("home") },
                 onEpisodesClick = { navController.goToTab("episodes") },

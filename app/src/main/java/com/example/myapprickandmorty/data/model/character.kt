@@ -56,3 +56,18 @@ data class EpisodeResponse(
     val info: PageInfo,
     val results: List<Episode>
 )
+
+data class Location(
+    val id: Int,
+    val name: String,
+    val type: String,
+    val dimension: String,
+    val residents: List<String> = emptyList()
+) {
+    val residentIds: List<Int>
+        get() = residents.mapNotNull { it.substringAfterLast('/').toIntOrNull() }
+}
+
+/** ID del lugar a partir de su URL; null si es desconocido (la API manda url vacía). */
+val Origin.locationId: Int?
+    get() = url.substringAfterLast('/').toIntOrNull()

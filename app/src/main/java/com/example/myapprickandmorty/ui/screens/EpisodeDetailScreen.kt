@@ -124,7 +124,7 @@ fun EpisodeDetailScreen(
     }
 }
 
-private fun androidx.compose.foundation.lazy.grid.LazyGridScope.fullWidth(
+internal fun androidx.compose.foundation.lazy.grid.LazyGridScope.fullWidth(
     content: @Composable () -> Unit
 ) = item(span = { GridItemSpan(maxLineSpan) }) { content() }
 
@@ -169,7 +169,7 @@ private fun EpisodeHeaderCard(episode: Episode) {
 }
 
 @Composable
-private fun CastMember(character: RickCharacter, onClick: () -> Unit) {
+internal fun CastMember(character: RickCharacter, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -200,7 +200,7 @@ private fun CastMember(character: RickCharacter, onClick: () -> Unit) {
 }
 
 @Composable
-private fun RetryBlock(message: String, onRetry: () -> Unit) {
+internal fun RetryBlock(message: String, onRetry: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
