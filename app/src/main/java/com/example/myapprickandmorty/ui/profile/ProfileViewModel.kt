@@ -46,6 +46,10 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    fun onCameraPermissionDenied() {
+        error = "Necesitas dar permiso de cámara para tomar la foto"
+    }
+
     fun onPhotoPicked(uri: Uri) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {

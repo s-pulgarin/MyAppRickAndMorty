@@ -30,6 +30,50 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.example.myapprickandmorty.data.favorites.FavoriteCharacter
 import com.example.myapprickandmorty.data.favorites.FavoriteStats
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import java.io.File
+
+/** Crea un archivo temporal en cache/camera/ y devuelve su Uri compartible con la app de cámara. */
+private fun createCameraUri(context: Context): Uri {
+    val dir = File(context.cacheDir, "camera").apply { mkdirs() }
+    val file = File.createTempFile("profile_", ".jpg", dir)
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
+@Composable
+private fun PhotoOption(icon: ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() }
+            .padding(vertical = 12.dp, horizontal = 4.dp)
+    ) {
+        Icon(
+            icon, null, tint = Color(0xFF0F141E),
+            modifier = Modifier.size(44.dp).clip(CircleShape).background(Color(0xFF97CE4C)).padding(10.dp)
+        )
+        Spacer(Modifier.width(14.dp))
+        Column {
+            Text(title, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(subtitle, color = Color(0xFF00B5CC), fontSize = 13.sp)
+        }
+    }
+}
 
 private val Bg = Color(0xFF0F141E)
 private val Green = Color(0xFF97CE4C)
@@ -44,10 +88,57 @@ fun ProfileScreen(
     favorites: List<FavoriteCharacter> = emptyList(),
     viewModel: ProfileViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    var showPhotoOptions by remember { mutableStateOf(false) }
+
     // Photo Picker del sistema: no requiere permisos
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let { viewModel.onPhotoPicked(it) }
     }
+
+    // Cámara: la foto se guarda en un archivo temporal (vía FileProvider) y luego se sube.
+    // Se guarda como String para sobrevivir si el sistema recrea la Activity mientras la cámara está abierta.
+    var pendingCameraUri by rememberSaveable { mutableStateOf<String?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val uri = pendingCameraUri?.let(Uri::parse)
+        if (saved && uri != null) viewModel.onPhotoPicked(uri)
+        pendingCameraUri = null
+    }
+    fun openCamera() {
+        val uri = createCameraUri(context)
+        pendingCameraUri = uri.toString()
+        cameraLauncher.launch(uri)
+    }
+    // Permiso de cámara en tiempo de ejecución
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) openCamera() else viewModel.onCameraPermissionDenied()
+    }
+    fun onTakePhoto() {
+        val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        if (granted) openCamera() else cameraPermission.launch(Manifest.permission.CAMERA)
+    }
+
+    if (showPhotoOptions) {
+        ModalBottomSheet(
+            onDismissRequest = { showPhotoOptions = false },
+            containerColor = Color(0xFF1E2738)
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp)) {
+                Text("Foto de perfil", color = Green, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(12.dp))
+                PhotoOption(Icons.Default.CameraAlt, "Tomar foto", "Usa la cámara del celular") {
+                    showPhotoOptions = false
+                    onTakePhoto()
+                }
+                PhotoOption(Icons.Default.PhotoLibrary, "Elegir de la galería", "Usa una foto que ya tengas") {
+                    showPhotoOptions = false
+                    picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            }
+        }
+    }
+
     val profile = viewModel.profile
     // Al volver del quiz esta pantalla se recompone: refresca el récord
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.refreshQuizBest() }
@@ -87,7 +178,7 @@ fun ProfileScreen(
                         .background(Color(0xFF1E2738))
                         .border(3.dp, Blue, CircleShape)
                         .clickable(enabled = !viewModel.isUploading) {
-                            picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            showPhotoOptions = true
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -105,7 +196,12 @@ fun ProfileScreen(
                 }
                 Icon(
                     Icons.Default.CameraAlt, "Cambiar foto", tint = Color.Black,
-                    modifier = Modifier.size(36.dp).clip(CircleShape).background(Green).padding(8.dp)
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(Green)
+                        .clickable(enabled = !viewModel.isUploading) { showPhotoOptions = true }
+                        .padding(8.dp)
                 )
             }
 
