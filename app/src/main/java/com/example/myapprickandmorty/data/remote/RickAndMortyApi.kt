@@ -13,7 +13,10 @@ interface RickAndMortyApi {
     @GET("character")
     suspend fun getCharacters(
         @Query("page") page: Int = 1,
-        @Query("name") name: String? = null
+        @Query("name") name: String? = null,
+        @Query("status") status: String? = null,
+        @Query("gender") gender: String? = null,
+        @Query("species") species: String? = null
     ): CharacterResponse
 
     @GET("character/{id}")

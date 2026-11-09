@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myapprickandmorty.data.model.CharacterFilters
 import com.example.myapprickandmorty.data.model.CharacterResponse
 import com.example.myapprickandmorty.data.model.RickCharacter
 import com.example.myapprickandmorty.data.remote.RetrofitClient
@@ -18,6 +19,9 @@ class HomeViewModel : ViewModel() {
 
     var characters by mutableStateOf<List<RickCharacter>>(emptyList()); private set
     var query by mutableStateOf(""); private set
+    var filters by mutableStateOf(CharacterFilters()); private set
+    /** Total de resultados que reporta la API para la búsqueda/filtros actuales. */
+    var totalCount by mutableStateOf<Int?>(null); private set
     var isLoading by mutableStateOf(true); private set
     var isLoadingMore by mutableStateOf(false); private set
     var error by mutableStateOf<String?>(null); private set
@@ -39,6 +43,14 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    /** Los filtros se aplican al instante (no hace falta esperar como al escribir). */
+    fun onFiltersChange(newFilters: CharacterFilters) {
+        if (newFilters == filters) return
+        filters = newFilters
+        searchJob?.cancel()
+        loadFirstPage()
+    }
+
     fun loadFirstPage() {
         loadJob?.cancel()
         page = 1
@@ -51,16 +63,19 @@ class HomeViewModel : ViewModel() {
             try {
                 val response = fetch(1, q)
                 characters = response.results
+                totalCount = response.info.count
                 canLoadMore = response.info.next != null
             } catch (e: CancellationException) {
                 throw e
             } catch (e: HttpException) {
                 characters = emptyList()
+                totalCount = 0
                 canLoadMore = false
                 // La API responde 404 cuando la búsqueda no tiene resultados
                 if (e.code() != 404) error = "No se pudo cargar los personajes"
             } catch (e: Exception) {
                 characters = emptyList()
+                totalCount = null
                 canLoadMore = false
                 error = "Sin conexión. Revisa tu internet e intenta de nuevo"
             }
@@ -88,5 +103,11 @@ class HomeViewModel : ViewModel() {
     }
 
     private suspend fun fetch(page: Int, name: String): CharacterResponse =
-        RetrofitClient.api.getCharacters(page = page, name = name.ifBlank { null })
+        RetrofitClient.api.getCharacters(
+            page = page,
+            name = name.ifBlank { null },
+            status = filters.status,
+            gender = filters.gender,
+            species = filters.species
+        )
 }

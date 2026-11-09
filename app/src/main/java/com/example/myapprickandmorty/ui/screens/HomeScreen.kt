@@ -36,16 +36,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.myapprickandmorty.data.model.CharacterFilters
 import com.example.myapprickandmorty.data.model.RickCharacter
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 
 @Composable
 fun HomeScreen(
     characterList: List<RickCharacter>,
     query: String,
+    filters: CharacterFilters,
+    totalCount: Int?,
     isLoading: Boolean,
     isLoadingMore: Boolean,
     errorMessage: String?,
     onQueryChange: (String) -> Unit,
+    onFiltersChange: (CharacterFilters) -> Unit,
     onLoadMore: () -> Unit,
     onCharacterClick: (Int) -> Unit,
     onFavoritesClick: () -> Unit = {},
@@ -59,6 +67,16 @@ fun HomeScreen(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
+    var showFilters by rememberSaveable { mutableStateOf(false) }
+
+    if (showFilters) {
+        CharacterFilterSheet(
+            filters = filters,
+            totalCount = totalCount,
+            onFiltersChange = onFiltersChange,
+            onDismiss = { showFilters = false }
+        )
+    }
 
     // true cuando quedan pocos elementos por ver al final de la lista
     val shouldLoadMore by remember {
@@ -107,6 +125,7 @@ fun HomeScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
+            Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
                 onValueChange = onQueryChange,
@@ -131,10 +150,49 @@ fun HomeScreen(
                     cursorColor = rickGreen
                 ),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .weight(1f)
                     .focusRequester(focusRequester)
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(10.dp))
+            // Botón de filtros con un globo que indica cuántos hay activos
+            BadgedBox(
+                badge = {
+                    if (!filters.isEmpty) {
+                        Badge(containerColor = rickGreen, contentColor = backgroundColor) {
+                            Text("${filters.activeCount}")
+                        }
+                    }
+                }
+            ) {
+                IconButton(
+                    onClick = { focusManager.clearFocus(); showFilters = true },
+                    modifier = Modifier
+                        .size(56.dp)
+                        .border(1.dp, if (filters.isEmpty) textBlue else rickGreen, CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = "Filtros",
+                        tint = if (filters.isEmpty) textBlue else rickGreen
+                    )
+                }
+            }
+            }
+
+            ActiveFiltersRow(
+                filters = filters,
+                onFiltersChange = onFiltersChange,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+            if (!isLoading && totalCount != null && (query.isNotBlank() || !filters.isEmpty)) {
+                Text(
+                    text = if (totalCount == 1) "1 resultado" else "$totalCount resultados",
+                    color = Color.Gray,
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
 
             when {
                 isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

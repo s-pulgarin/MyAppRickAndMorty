@@ -99,10 +99,13 @@ fun AppNavigation() {
             HomeScreen(
                 characterList = homeViewModel.characters,
                 query = homeViewModel.query,
+                filters = homeViewModel.filters,
+                totalCount = homeViewModel.totalCount,
                 isLoading = homeViewModel.isLoading,
                 isLoadingMore = homeViewModel.isLoadingMore,
                 errorMessage = homeViewModel.error,
                 onQueryChange = homeViewModel::onQueryChange,
+                onFiltersChange = homeViewModel::onFiltersChange,
                 onLoadMore = homeViewModel::loadNextPage,
                 onCharacterClick = { id -> navController.navigate("detail/$id") },
                 onFavoritesClick = { navController.goToTab("favorites") },
