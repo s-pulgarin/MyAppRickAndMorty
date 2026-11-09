@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -13,13 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
-enum class BottomTab { Characters, Favorites, Profile }
+enum class BottomTab { Characters, Episodes, Favorites, Profile }
 
 /** Barra inferior compartida. [selected] = null cuando la pantalla no es una pestaña (p. ej. el detalle). */
 @Composable
 fun CustomBottomNavigation(
     selected: BottomTab? = null,
     onCharactersClick: () -> Unit = {},
+    onEpisodesClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
@@ -28,6 +30,7 @@ fun CustomBottomNavigation(
         contentColor = Color.White
     ) {
         TabItem(selected == BottomTab.Characters, Icons.Default.Group, "Personajes", onCharactersClick)
+        TabItem(selected == BottomTab.Episodes, Icons.Default.Tv, "Episodios", onEpisodesClick)
         TabItem(selected == BottomTab.Favorites, Icons.Default.Favorite, "Favoritos", onFavoritesClick)
         TabItem(selected == BottomTab.Profile, Icons.Default.Person, "Perfil", onProfileClick)
     }

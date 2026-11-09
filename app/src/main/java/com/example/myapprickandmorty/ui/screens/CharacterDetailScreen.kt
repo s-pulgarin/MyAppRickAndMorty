@@ -2,6 +2,7 @@ package com.example.myapprickandmorty.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.myapprickandmorty.data.model.Episode
 import com.example.myapprickandmorty.data.model.RickCharacter
+import com.example.myapprickandmorty.ui.episodes.formatAirDate
 
 private val BackgroundColor = Color(0xFF0F141E)
 private val RickGreen = Color(0xFF97CE4C)
@@ -44,7 +47,9 @@ fun CharacterDetailScreen(
     onToggleFavorite: () -> Unit,
     onRetry: () -> Unit,
     onBackClick: () -> Unit,
+    onEpisodeClick: (Int) -> Unit = {},
     onCharactersClick: () -> Unit = {},
+    onEpisodesClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
@@ -52,6 +57,7 @@ fun CharacterDetailScreen(
         bottomBar = {
             CustomBottomNavigation(
                 onCharactersClick = onCharactersClick,
+                onEpisodesClick = onEpisodesClick,
                 onFavoritesClick = onFavoritesClick,
                 onProfileClick = onProfileClick
             )
@@ -108,7 +114,7 @@ fun CharacterDetailScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             when {
-                character != null -> CharacterDetailContent(character, firstEpisode, lastEpisode, isLoading)
+                character != null -> CharacterDetailContent(character, firstEpisode, lastEpisode, isLoading, onEpisodeClick)
                 isLoading -> Box(
                     modifier = Modifier.fillMaxWidth().padding(top = 80.dp),
                     contentAlignment = Alignment.Center
@@ -134,7 +140,8 @@ private fun CharacterDetailContent(
     character: RickCharacter,
     firstEpisode: Episode?,
     lastEpisode: Episode?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    onEpisodeClick: (Int) -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -167,7 +174,10 @@ private fun CharacterDetailContent(
         RowDivider()
         DetailRowStatus(label = "Estado", status = character.status)
         RowDivider()
-        DetailRow(label = "Especie", value = character.species)
+        DetailRow(
+            label = "Especie",
+            value = if (character.species.equals("unknown", ignoreCase = true)) "Desconocida" else character.species
+        )
         RowDivider()
         DetailRow(label = "Tipo", value = character.type.ifBlank { "—" })
         RowDivider()
@@ -187,10 +197,10 @@ private fun CharacterDetailContent(
         DetailRow(label = "Episodios", value = if (count == 1) "1 episodio" else "$count episodios")
         if (count > 0) {
             RowDivider()
-            EpisodeRow(label = "Primera aparición", episode = firstEpisode, isLoading = isLoading)
+            EpisodeRow(label = "Primera aparición", episode = firstEpisode, isLoading = isLoading, onClick = onEpisodeClick)
             if (count > 1) {
                 RowDivider()
-                EpisodeRow(label = "Última aparición", episode = lastEpisode, isLoading = isLoading)
+                EpisodeRow(label = "Última aparición", episode = lastEpisode, isLoading = isLoading, onClick = onEpisodeClick)
             }
         }
     }
@@ -213,8 +223,13 @@ private fun SectionCard(content: @Composable ColumnScope.() -> Unit) {
 private fun RowDivider() = HorizontalDivider(color = RickGreen.copy(alpha = 0.3f))
 
 @Composable
-private fun EpisodeRow(label: String, episode: Episode?, isLoading: Boolean) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+private fun EpisodeRow(label: String, episode: Episode?, isLoading: Boolean, onClick: (Int) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (episode != null) Modifier.clickable { onClick(episode.id) } else Modifier)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
         Text(text = label, color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         Spacer(modifier = Modifier.height(4.dp))
         when {
@@ -237,8 +252,9 @@ private fun EpisodeRow(label: String, episode: Episode?, isLoading: Boolean) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
+                    Icon(Icons.Default.ChevronRight, contentDescription = "Ver episodio", tint = TextBlue)
                 }
-                Text(text = episode.air_date, color = Color.LightGray, fontSize = 13.sp)
+                Text(text = formatAirDate(episode.air_date), color = Color.LightGray, fontSize = 13.sp)
             }
             isLoading -> Text(text = "Cargando…", color = Color.LightGray, fontSize = 14.sp)
             else -> Text(text = "No disponible", color = Color.LightGray, fontSize = 14.sp)

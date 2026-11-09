@@ -27,6 +27,10 @@ import com.example.myapprickandmorty.ui.theme.MyAppRickAndMortyTheme
 import com.example.myapprickandmorty.ui.detail.CharacterDetailViewModel
 import com.example.myapprickandmorty.ui.favorites.FavoritesViewModel
 import com.example.myapprickandmorty.ui.screens.FavoritesScreen
+import com.example.myapprickandmorty.ui.screens.EpisodesScreen
+import com.example.myapprickandmorty.ui.screens.EpisodeDetailScreen
+import com.example.myapprickandmorty.ui.episodes.EpisodesViewModel
+import com.example.myapprickandmorty.ui.episodes.EpisodeDetailViewModel
 import androidx.navigation.NavController
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +58,7 @@ fun AppNavigation() {
     // Un solo ViewModel compartido: mantiene la lista y la búsqueda al navegar
     val homeViewModel: HomeViewModel = viewModel()
     val favoritesViewModel: FavoritesViewModel = viewModel()
+    val episodesViewModel: EpisodesViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -108,6 +113,7 @@ fun AppNavigation() {
                 onFiltersChange = homeViewModel::onFiltersChange,
                 onLoadMore = homeViewModel::loadNextPage,
                 onCharacterClick = { id -> navController.navigate("detail/$id") },
+                onEpisodesClick = { navController.goToTab("episodes") },
                 onFavoritesClick = { navController.goToTab("favorites") },
                 onProfileClick = { navController.goToTab("profile") }
             )
@@ -121,6 +127,55 @@ fun AppNavigation() {
                 onCharacterClick = { id -> navController.navigate("detail/$id") },
                 onRemoveFavorite = favoritesViewModel::remove,
                 onCharactersClick = { navController.goToTab("home") },
+                onEpisodesClick = { navController.goToTab("episodes") },
+                onProfileClick = { navController.goToTab("profile") }
+            )
+        }
+
+        composable("episodes") {
+            LaunchedEffect(Unit) { episodesViewModel.loadIfNeeded() }
+            EpisodesScreen(
+                seasons = episodesViewModel.seasons,
+                selectedSeason = episodesViewModel.selectedSeason,
+                episodes = episodesViewModel.currentEpisodes,
+                totalEpisodes = episodesViewModel.episodesBySeason.values.sumOf { it.size },
+                isLoading = episodesViewModel.isLoading,
+                errorMessage = episodesViewModel.error,
+                onSeasonSelect = episodesViewModel::selectSeason,
+                onEpisodeClick = { id -> navController.navigate("episode/$id") },
+                onRetry = episodesViewModel::loadIfNeeded,
+                onCharactersClick = { navController.goToTab("home") },
+                onFavoritesClick = { navController.goToTab("favorites") },
+                onProfileClick = { navController.goToTab("profile") }
+            )
+        }
+
+        composable(
+            route = "episode/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val episodeId = backStackEntry.arguments?.getInt("id") ?: 1
+            // Este ViewModel vive solo mientras esta pantalla esté en la pila
+            val episodeViewModel: EpisodeDetailViewModel = viewModel()
+
+            LaunchedEffect(episodeId) {
+                // Si la lista de episodios ya está cargada se reutiliza; si no (p. ej. desde un personaje), se pide a la API
+                val cached = episodesViewModel.episodesBySeason.values.flatten().find { it.id == episodeId }
+                episodeViewModel.load(episodeId, cached)
+            }
+
+            EpisodeDetailScreen(
+                episode = episodeViewModel.episode,
+                cast = episodeViewModel.cast,
+                isLoading = episodeViewModel.isLoading,
+                isLoadingCast = episodeViewModel.isLoadingCast,
+                errorMessage = episodeViewModel.error,
+                onRetry = { episodeViewModel.retry(episodeId) },
+                onCharacterClick = { id -> navController.navigate("detail/$id") },
+                onBackClick = { navController.popBackStack() },
+                onCharactersClick = { navController.goToTab("home") },
+                onEpisodesClick = { navController.goToTab("episodes") },
+                onFavoritesClick = { navController.goToTab("favorites") },
                 onProfileClick = { navController.goToTab("profile") }
             )
         }
@@ -148,8 +203,10 @@ fun AppNavigation() {
                 isFavorite = favoritesViewModel.isFavorite(characterId),
                 onToggleFavorite = { character?.let(favoritesViewModel::toggle) },
                 onRetry = { detailViewModel.retry(characterId) },
+                onEpisodeClick = { id -> navController.navigate("episode/$id") },
                 onBackClick = { navController.popBackStack() },
                 onCharactersClick = { navController.goToTab("home") },
+                onEpisodesClick = { navController.goToTab("episodes") },
                 onFavoritesClick = { navController.goToTab("favorites") },
                 onProfileClick = { navController.goToTab("profile") }
             )

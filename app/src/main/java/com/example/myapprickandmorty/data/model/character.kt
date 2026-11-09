@@ -39,5 +39,20 @@ data class Episode(
     val id: Int,
     val name: String,
     val air_date: String,
-    val episode: String
+    val episode: String,
+    val characters: List<String> = emptyList()
+) {
+    /** Temporada a partir del código ("S03E07" -> 3). */
+    val season: Int get() = episode.substringAfter('S').substringBefore('E').toIntOrNull() ?: 0
+
+    /** Número dentro de la temporada ("S03E07" -> 7). */
+    val number: Int get() = episode.substringAfter('E').toIntOrNull() ?: 0
+
+    val characterIds: List<Int>
+        get() = characters.mapNotNull { it.substringAfterLast('/').toIntOrNull() }
+}
+
+data class EpisodeResponse(
+    val info: PageInfo,
+    val results: List<Episode>
 )

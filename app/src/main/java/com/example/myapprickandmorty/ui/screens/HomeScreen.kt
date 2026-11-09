@@ -56,6 +56,7 @@ fun HomeScreen(
     onFiltersChange: (CharacterFilters) -> Unit,
     onLoadMore: () -> Unit,
     onCharacterClick: (Int) -> Unit,
+    onEpisodesClick: () -> Unit = {},
     onFavoritesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
@@ -99,6 +100,7 @@ fun HomeScreen(
             CustomBottomNavigation(
                 selected = BottomTab.Characters,
                 onCharactersClick = { scope.launch { listState.animateScrollToItem(0) } },
+                onEpisodesClick = onEpisodesClick,
                 onFavoritesClick = onFavoritesClick,
                 onProfileClick = onProfileClick
             )

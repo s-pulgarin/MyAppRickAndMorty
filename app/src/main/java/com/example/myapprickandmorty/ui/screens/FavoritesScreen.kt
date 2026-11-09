@@ -33,6 +33,7 @@ fun FavoritesScreen(
     onCharacterClick: (Int) -> Unit,
     onRemoveFavorite: (Int) -> Unit,
     onCharactersClick: () -> Unit,
+    onEpisodesClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
     val backgroundColor = Color(0xFF0F141E)
@@ -44,6 +45,7 @@ fun FavoritesScreen(
             CustomBottomNavigation(
                 selected = BottomTab.Favorites,
                 onCharactersClick = onCharactersClick,
+                onEpisodesClick = onEpisodesClick,
                 onProfileClick = onProfileClick
             )
         },

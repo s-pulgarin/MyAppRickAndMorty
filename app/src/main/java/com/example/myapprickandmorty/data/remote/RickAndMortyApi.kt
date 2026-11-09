@@ -3,6 +3,7 @@ package com.example.myapprickandmorty.data.remote
 import com.example.myapprickandmorty.data.model.RickCharacter
 import com.example.myapprickandmorty.data.model.CharacterResponse
 import com.example.myapprickandmorty.data.model.Episode
+import com.example.myapprickandmorty.data.model.EpisodeResponse
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -23,6 +24,17 @@ interface RickAndMortyApi {
     suspend fun getCharacterById(
         @Path("id") id: Int
     ): RickCharacter
+
+    /** Ojo: con 2+ IDs la API responde una lista; con uno solo responde un objeto. */
+    @GET("character/{ids}")
+    suspend fun getCharactersByIds(
+        @Path("ids") ids: String
+    ): List<RickCharacter>
+
+    @GET("episode")
+    suspend fun getEpisodes(
+        @Query("page") page: Int = 1
+    ): EpisodeResponse
 
     @GET("episode/{id}")
     suspend fun getEpisodeById(
