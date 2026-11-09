@@ -26,6 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.example.myapprickandmorty.data.favorites.FavoriteCharacter
+import com.example.myapprickandmorty.data.favorites.FavoriteStats
 
 private val Bg = Color(0xFF0F141E)
 private val Green = Color(0xFF97CE4C)
@@ -37,6 +41,7 @@ fun ProfileScreen(
     onBack: () -> Unit,
     onLoggedOut: () -> Unit,
     onPlayQuiz: () -> Unit = {},
+    favorites: List<FavoriteCharacter> = emptyList(),
     viewModel: ProfileViewModel = viewModel()
 ) {
     // Photo Picker del sistema: no requiere permisos
@@ -62,7 +67,11 @@ fun ProfileScreen(
         }
     ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).padding(24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (viewModel.isLoading) {
@@ -110,6 +119,9 @@ fun ProfileScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+            ProfileStatsCard(stats = FavoriteStats.from(favorites))
+
+            Spacer(Modifier.height(16.dp))
             // Entrada al mini juego con el récord guardado
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -130,7 +142,7 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(32.dp))
             OutlinedButton(
                 onClick = { viewModel.logout(); onLoggedOut() },
                 modifier = Modifier.fillMaxWidth().height(52.dp),

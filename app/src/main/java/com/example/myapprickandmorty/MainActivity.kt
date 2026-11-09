@@ -101,7 +101,8 @@ fun AppNavigation() {
                 onLoggedOut = {
                     navController.navigate("login") { popUpTo(0) { inclusive = true } }
                 },
-                onPlayQuiz = { navController.navigate("quiz") }
+                onPlayQuiz = { navController.navigate("quiz") },
+                favorites = favoritesViewModel.favorites
             )
         }
 
