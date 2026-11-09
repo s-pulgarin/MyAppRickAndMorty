@@ -24,6 +24,10 @@ import com.example.myapprickandmorty.ui.home.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.example.myapprickandmorty.ui.theme.MyAppRickAndMortyTheme
+import com.example.myapprickandmorty.ui.detail.CharacterDetailViewModel
+import com.example.myapprickandmorty.ui.favorites.FavoritesViewModel
+import com.example.myapprickandmorty.ui.screens.FavoritesScreen
+import androidx.navigation.NavController
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,6 +53,7 @@ fun AppNavigation() {
 
     // Un solo ViewModel compartido: mantiene la lista y la búsqueda al navegar
     val homeViewModel: HomeViewModel = viewModel()
+    val favoritesViewModel: FavoritesViewModel = viewModel()
 
     NavHost(navController = navController, startDestination = "splash") {
         composable("splash") {
@@ -100,7 +105,20 @@ fun AppNavigation() {
                 onQueryChange = homeViewModel::onQueryChange,
                 onLoadMore = homeViewModel::loadNextPage,
                 onCharacterClick = { id -> navController.navigate("detail/$id") },
-                onProfileClick = { navController.navigate("profile") }
+                onFavoritesClick = { navController.goToTab("favorites") },
+                onProfileClick = { navController.goToTab("profile") }
+            )
+        }
+
+        composable("favorites") {
+            FavoritesScreen(
+                favorites = favoritesViewModel.favorites,
+                isLoading = favoritesViewModel.isLoading,
+                errorMessage = favoritesViewModel.error,
+                onCharacterClick = { id -> navController.navigate("detail/$id") },
+                onRemoveFavorite = favoritesViewModel::remove,
+                onCharactersClick = { navController.goToTab("home") },
+                onProfileClick = { navController.goToTab("profile") }
             )
         }
 
@@ -109,15 +127,43 @@ fun AppNavigation() {
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val characterId = backStackEntry.arguments?.getInt("id") ?: 1
+            // Este ViewModel vive solo mientras esta pantalla esté en la pila
+            val detailViewModel: CharacterDetailViewModel = viewModel()
 
-            val selectedCharacter = homeViewModel.characters.find { it.id == characterId }
-
-            if (selectedCharacter != null) {
-                CharacterDetailScreen(
-                    character = selectedCharacter,
-                    onBackClick = { navController.popBackStack() }
-                )
+            LaunchedEffect(characterId) {
+                // Si ya está en la lista de Home se muestra al instante; si no (p. ej. desde Favoritos), se pide a la API
+                detailViewModel.load(characterId, homeViewModel.characters.find { it.id == characterId })
             }
+
+            val character = detailViewModel.character
+            CharacterDetailScreen(
+                character = character,
+                firstEpisode = detailViewModel.firstEpisode,
+                lastEpisode = detailViewModel.lastEpisode,
+                isLoading = detailViewModel.isLoading,
+                errorMessage = detailViewModel.error,
+                isFavorite = favoritesViewModel.isFavorite(characterId),
+                onToggleFavorite = { character?.let(favoritesViewModel::toggle) },
+                onRetry = { detailViewModel.retry(characterId) },
+                onBackClick = { navController.popBackStack() },
+                onCharactersClick = { navController.goToTab("home") },
+                onFavoritesClick = { navController.goToTab("favorites") },
+                onProfileClick = { navController.goToTab("profile") }
+            )
         }
+    }
+}
+/**
+ * Navega entre pestañas de la barra inferior sin apilar pantallas repetidas:
+ * "home" siempre queda como base de la pila, así el botón Atrás vuelve a Personajes.
+ */
+private fun NavController.goToTab(route: String) {
+    if (route == "home") {
+        popBackStack("home", inclusive = false)
+        return
+    }
+    navigate(route) {
+        popUpTo("home")
+        launchSingleTop = true
     }
 }

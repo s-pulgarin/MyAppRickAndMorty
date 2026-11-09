@@ -24,8 +24,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -50,6 +48,7 @@ fun HomeScreen(
     onQueryChange: (String) -> Unit,
     onLoadMore: () -> Unit,
     onCharacterClick: (Int) -> Unit,
+    onFavoritesClick: () -> Unit = {},
     onProfileClick: () -> Unit = {}
 ) {
     val backgroundColor = Color(0xFF0F141E)
@@ -80,10 +79,9 @@ fun HomeScreen(
     Scaffold(
         bottomBar = {
             CustomBottomNavigation(
-                onSearchClick = {
-                    scope.launch { listState.animateScrollToItem(0) }
-                    focusRequester.requestFocus()
-                },
+                selected = BottomTab.Characters,
+                onCharactersClick = { scope.launch { listState.animateScrollToItem(0) } },
+                onFavoritesClick = onFavoritesClick,
                 onProfileClick = onProfileClick
             )
         },
@@ -238,46 +236,5 @@ fun CharacterListCard(character: RickCharacter, onClick: () -> Unit) {
                 tint = textBlueColor
             )
         }
-    }
-}
-
-@Composable
-fun CustomBottomNavigation(onSearchClick: () -> Unit = {}, onProfileClick: () -> Unit = {}) {
-    NavigationBar(
-        containerColor = Color(0xFF0F141E),
-        contentColor = Color.White
-    ) {
-        NavigationBarItem(
-            selected = true,
-            onClick = { },
-            icon = { Icon(Icons.Default.Group, contentDescription = "Personajes") },
-            label = { Text("Personajes") },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF97CE4C),
-                selectedTextColor = Color(0xFF97CE4C),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onSearchClick,
-            icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-            label = { Text("Buscar") },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray
-            )
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = onProfileClick,
-            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            colors = NavigationBarItemDefaults.colors(
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray,
-                indicatorColor = Color.Transparent
-            )
-        )
     }
 }
