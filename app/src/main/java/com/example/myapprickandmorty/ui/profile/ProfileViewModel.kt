@@ -35,6 +35,17 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    /** Vuelve a leer solo el récord del quiz, sin mostrar el indicador de carga (al regresar del juego). */
+    fun refreshQuizBest() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val best = profiles.getProfile(uid)?.quizBest ?: return@launch
+                profile = profile?.copy(quizBest = best)
+            } catch (e: Exception) { /* se mantiene el valor anterior */ }
+        }
+    }
+
     fun onPhotoPicked(uri: Uri) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {

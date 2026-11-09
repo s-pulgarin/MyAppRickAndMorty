@@ -1,6 +1,7 @@
 package com.example.myapprickandmorty.data.profile
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 class ProfileRepository(private val db: FirebaseFirestore = FirebaseFirestore.getInstance()) {
@@ -16,6 +17,11 @@ class ProfileRepository(private val db: FirebaseFirestore = FirebaseFirestore.ge
 
     suspend fun updateName(uid: String, name: String) {
         doc(uid).update("name", name).await()
+    }
+
+    /** merge: funciona aunque el documento del perfil aún no exista. */
+    suspend fun updateQuizBest(uid: String, best: Int) {
+        doc(uid).set(mapOf("quizBest" to best), SetOptions.merge()).await()
     }
 
     suspend fun updatePhotoUrl(uid: String, url: String) {

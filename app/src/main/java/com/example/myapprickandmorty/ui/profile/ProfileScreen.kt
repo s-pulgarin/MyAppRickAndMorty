@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -35,6 +36,7 @@ private val Blue = Color(0xFF00B5CC)
 fun ProfileScreen(
     onBack: () -> Unit,
     onLoggedOut: () -> Unit,
+    onPlayQuiz: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel()
 ) {
     // Photo Picker del sistema: no requiere permisos
@@ -42,6 +44,8 @@ fun ProfileScreen(
         uri?.let { viewModel.onPhotoPicked(it) }
     }
     val profile = viewModel.profile
+    // Al volver del quiz esta pantalla se recompone: refresca el récord
+    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.refreshQuizBest() }
 
     Scaffold(
         containerColor = Bg,
@@ -103,6 +107,27 @@ fun ProfileScreen(
             viewModel.error?.let {
                 Spacer(Modifier.height(16.dp))
                 Text(it, color = Color(0xFFFF6B6B), fontSize = 14.sp)
+            }
+
+            Spacer(Modifier.height(32.dp))
+            // Entrada al mini juego con el récord guardado
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E2738)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Green, RoundedCornerShape(16.dp))
+                    .clickable { onPlayQuiz() }
+            ) {
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.SportsEsports, null, tint = Green, modifier = Modifier.size(36.dp))
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text("Quiz ¿Vivo o muerto?", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+                        Text("Tu récord: ${profile?.quizBest ?: 0} seguidos", color = Blue, fontSize = 14.sp)
+                    }
+                    Text("JUGAR", color = Green, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(Modifier.weight(1f))

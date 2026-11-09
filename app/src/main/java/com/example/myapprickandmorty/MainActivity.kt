@@ -33,6 +33,8 @@ import com.example.myapprickandmorty.ui.episodes.EpisodesViewModel
 import com.example.myapprickandmorty.ui.episodes.EpisodeDetailViewModel
 import com.example.myapprickandmorty.ui.locations.LocationDetailViewModel
 import com.example.myapprickandmorty.ui.screens.LocationDetailScreen
+import com.example.myapprickandmorty.ui.quiz.QuizViewModel
+import com.example.myapprickandmorty.ui.screens.QuizScreen
 import androidx.navigation.NavController
 
 class MainActivity : ComponentActivity() {
@@ -98,7 +100,29 @@ fun AppNavigation() {
                 onBack = { navController.popBackStack() },
                 onLoggedOut = {
                     navController.navigate("login") { popUpTo(0) { inclusive = true } }
-                }
+                },
+                onPlayQuiz = { navController.navigate("quiz") }
+            )
+        }
+
+        composable("quiz") {
+            // Una partida nueva cada vez que se entra; el récord vive en Firestore
+            val quizViewModel: QuizViewModel = viewModel()
+            QuizScreen(
+                character = quizViewModel.current,
+                lastAnswerCorrect = quizViewModel.lastAnswerCorrect,
+                score = quizViewModel.score,
+                best = quizViewModel.best,
+                isNewRecord = quizViewModel.isNewRecord,
+                isGameOver = quizViewModel.isGameOver,
+                isLoading = quizViewModel.isLoading,
+                errorMessage = quizViewModel.error,
+                onAnswer = quizViewModel::answer,
+                onNext = quizViewModel::next,
+                onRestart = quizViewModel::restart,
+                onRetry = quizViewModel::retry,
+                onCharacterClick = { id -> navController.navigate("detail/$id") },
+                onBackClick = { navController.popBackStack() }
             )
         }
 
